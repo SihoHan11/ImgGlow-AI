@@ -1,20 +1,25 @@
 import argparse
+import gc
 from pathlib import Path
 from runpy import run_path
 
 import cv2
 import numpy as np
+import openvino as ov
 import torch
 import torch.nn.functional as F
 from skimage import img_as_ubyte
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-RESTORMER_ARCH_PATH = REPO_ROOT / "temp-restormer" / "basicsr" / "models" / "archs" / "restormer_arch.py"
+RESTORMER_ARCH_PATH = Path(__file__).resolve().with_name("core") / "restormer_arch.py"
 WEIGHT_CANDIDATES = (
     Path(__file__).resolve().with_name("motion_deblurring.pth"),
     Path(__file__).resolve().with_name("single_image_defocus_deblurring.pth"),
 )
+IR_MODEL_PATH = Path(__file__).resolve().with_name("motion_deblurring.xml")
+IR_WEIGHT_PATH = Path(__file__).resolve().with_name("motion_deblurring.bin")
+_COMPILED_MODEL = None
 
 
 def parse_args() -> argparse.Namespace:
@@ -31,7 +36,7 @@ def resolve_weight_path() -> Path:
     raise FileNotFoundError("Restormer 가중치 파일이 없습니다.")
 
 
-def load_model(device: torch.device) -> torch.nn.Module:
+def build_model() -> torch.nn.Module:
     if not RESTORMER_ARCH_PATH.exists():
         raise FileNotFoundError(f"Restormer 소스가 없습니다: {RESTORMER_ARCH_PATH}")
 
@@ -49,12 +54,47 @@ def load_model(device: torch.device) -> torch.nn.Module:
         LayerNorm_type="WithBias",
         dual_pixel_task=False,
     )
+    return model
+
+
+def load_model(device: torch.device) -> torch.nn.Module:
+    model = build_model()
 
     checkpoint = torch.load(resolve_weight_path(), map_location="cpu", weights_only=False)
     model.load_state_dict(checkpoint["params"])
     model.to(device)
     model.eval()
     return model
+
+
+def export_openvino_model() -> Path:
+    if IR_MODEL_PATH.exists() and IR_WEIGHT_PATH.exists():
+        return IR_MODEL_PATH
+
+    model = load_model(torch.device("cpu"))
+    example_input = torch.randn(1, 3, 128, 128)
+    ov_model = ov.convert_model(model, example_input=example_input)
+    ov.save_model(ov_model, IR_MODEL_PATH)
+    return IR_MODEL_PATH
+
+
+def load_openvino_model():
+    global _COMPILED_MODEL
+    if _COMPILED_MODEL is not None:
+        return _COMPILED_MODEL, "cached"
+
+    ir_model_path = export_openvino_model()
+    core = ov.Core()
+    available_devices = set(core.available_devices)
+    device_name = "GPU" if "GPU" in available_devices else "CPU"
+    _COMPILED_MODEL = core.compile_model(ir_model_path, device_name)
+    return _COMPILED_MODEL, device_name
+
+
+def clear_cache() -> None:
+    global _COMPILED_MODEL
+    _COMPILED_MODEL = None
+    gc.collect()
 
 
 def load_image(input_path: Path) -> tuple[np.ndarray, torch.Tensor, tuple[int, int]]:
@@ -86,16 +126,16 @@ def save_image(restored: torch.Tensor, size: tuple[int, int], output_path: Path)
         raise RuntimeError(f"결과 이미지를 저장하지 못했습니다: {output_path}")
 
 
-def deblur_image(input_path: Path, output_path: Path) -> None:
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = load_model(device)
+def deblur_with_openvino(input_path: Path, output_path: Path) -> None:
+    compiled_model, _ = load_openvino_model()
     _, tensor, original_size = load_image(input_path)
-    tensor = tensor.to(device)
-
-    with torch.no_grad():
-        restored = model(tensor).clamp(0, 1)
-
+    output_tensor = compiled_model([tensor.numpy()])[0]
+    restored = torch.from_numpy(output_tensor).clamp(0, 1)
     save_image(restored, original_size, output_path)
+
+
+def deblur_image(input_path: Path, output_path: Path) -> None:
+    deblur_with_openvino(input_path, output_path)
 
 
 def main() -> None:

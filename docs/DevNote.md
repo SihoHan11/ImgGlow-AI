@@ -55,6 +55,9 @@
 - 서버 의존성 설치: `python -m pip install -r server/requirements.txt`
 - 서버 실행: `python -m uvicorn server.main:app --reload --host 0.0.0.0 --port 8000`
 - 앱 실행: `npm start`
+- OpenVINO IR 파일이 없으면 첫 실행 시 `pth -> xml/bin` 변환이 1회 수행된다.
+- IR 생성 후에는 서버 프로세스 안에서 mode별 OpenVINO compiled model을 캐시해 재사용한다.
+- 해당 mode가 20분 동안 호출되지 않으면 백그라운드 정리 스레드가 캐시를 해제해 메모리를 반환한다.
 
 ## 테스트 체크리스트
 - 이미지 선택 후 3개 mode 요청 가능 여부
@@ -81,12 +84,12 @@
 - PowerShell 실행 정책으로 `npx.ps1` 직접 실행은 실패했다.
 - `cmd /c npx expo export --platform android --output-dir temp-export-check`로 우회해 번들 검증을 진행했다.
 - Expo Android export가 정상 완료되어 현재 JS 번들 기준으로 화면 연결과 구문 오류는 없는 상태다.
+- `RealESRGAN`, `Restormer`, `BiRefNet`는 OpenVINO IR로 변환해 Intel iGPU 경로에서 추론 가능함을 확인했다.
+- 서버는 더 이상 `subprocess.run`으로 매 요청마다 새 파이썬 프로세스를 띄우지 않고, 같은 프로세스에서 엔트리 모듈과 compiled model을 재사용한다.
+- 동일 서버 프로세스에서 같은 mode의 2회차 요청은 1회차보다 크게 빨라지는 것을 확인했다.
 
 ## 남은 과정
-- 각 모델 폴더에 실제 실행 엔트리 파일을 배치한다.
-- 배치 위치는 `server/models/upscale/`, `server/models/deblur/`, `server/models/remove_bg/`이다.
-- 서버는 각 폴더에서 `entry.py`, `infer.py`, `run.py`, `main.py` 중 하나를 찾는다.
-- 엔트리 파일은 `--input <원본경로> --output <결과경로>` 인자를 받아 결과 이미지를 생성해야 한다.
 - 실기기 또는 Android 에뮬레이터에서는 `127.0.0.1` 대신 현재 개발 PC의 실제 IP를 `API_BASE_URL`에 넣어야 한다.
-- 앱 실행 후 이미지 선택, 3개 mode 요청, 결과 저장, 기록 조회/삭제까지 순서대로 확인한다.
+- 앱 실행 후 이미지 선택, 3개 mode 요청, 결과 저장, 기록 조회/삭제까지 순서대로 재점검한다.
+- 서버 재시작 직후 1회차 요청과 같은 mode 2회차 요청의 체감 속도 차이를 확인한다.
 - 모델 실행 실패 시 서버 응답 메시지와 `server/data/history.json`의 `failed` 기록이 남는지 확인한다.

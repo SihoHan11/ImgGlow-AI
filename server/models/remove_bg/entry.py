@@ -1,18 +1,24 @@
 import argparse
+import gc
 import sys
 import types
 from contextlib import nullcontext
 from pathlib import Path
 
 import numpy as np
+import openvino as ov
 import torch
 from PIL import Image
 from torchvision import transforms
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-BIREFNET_ROOT = REPO_ROOT / "temp-birefnet"
+BIREFNET_ROOT = Path(__file__).resolve().with_name("core")
 WEIGHT_PATH = Path(__file__).resolve().with_name("BiRefNet-general-bb_swin_v1_tiny-epoch_232.pth")
+IR_MODEL_PATH = Path(__file__).resolve().with_name("BiRefNet-general-bb_swin_v1_tiny-epoch_232.xml")
+IR_WEIGHT_PATH = Path(__file__).resolve().with_name("BiRefNet-general-bb_swin_v1_tiny-epoch_232.bin")
+_COMPILED_MODEL = None
+_REFINE_FOREGROUND = None
 
 
 def parse_args() -> argparse.Namespace:
@@ -69,6 +75,48 @@ def load_model(device: torch.device):
     return model, refine_foreground
 
 
+def load_refine_foreground():
+    global _REFINE_FOREGROUND
+    if _REFINE_FOREGROUND is not None:
+        return _REFINE_FOREGROUND
+
+    patch_birefnet_config()
+    from image_proc import refine_foreground
+    _REFINE_FOREGROUND = refine_foreground
+    return _REFINE_FOREGROUND
+
+
+def export_openvino_model() -> Path:
+    if IR_MODEL_PATH.exists() and IR_WEIGHT_PATH.exists():
+        return IR_MODEL_PATH
+
+    model, _ = load_model(torch.device("cpu"))
+    ov_model = ov.convert_model(model, example_input=torch.randn(1, 3, 1024, 1024))
+    ov_model.reshape({ov_model.input(0): [1, 3, 1024, 1024]})
+    ov.save_model(ov_model, IR_MODEL_PATH)
+    return IR_MODEL_PATH
+
+
+def load_openvino_model():
+    global _COMPILED_MODEL
+    if _COMPILED_MODEL is not None:
+        return _COMPILED_MODEL
+
+    ir_model_path = export_openvino_model()
+    core = ov.Core()
+    available_devices = set(core.available_devices)
+    device_name = "GPU" if "GPU" in available_devices else "CPU"
+    _COMPILED_MODEL = core.compile_model(ir_model_path, device_name)
+    return _COMPILED_MODEL
+
+
+def clear_cache() -> None:
+    global _COMPILED_MODEL, _REFINE_FOREGROUND
+    _COMPILED_MODEL = None
+    _REFINE_FOREGROUND = None
+    gc.collect()
+
+
 def build_transform() -> transforms.Compose:
     return transforms.Compose(
         [
@@ -95,21 +143,19 @@ def save_result(image: Image.Image, alpha_mask: Image.Image, output_path: Path) 
 
 
 def remove_background(input_path: Path, output_path: Path) -> None:
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model, refine_foreground = load_model(device)
+    image = Image.open(input_path).convert("RGB")
     transform_image = build_transform()
 
-    image = Image.open(input_path).convert("RGB")
-    input_tensor = transform_image(image).unsqueeze(0).to(device)
-
-    autocast_ctx = torch.amp.autocast(device_type="cuda", dtype=torch.float16) if device.type == "cuda" else nullcontext()
-    with autocast_ctx, torch.no_grad():
-        prediction = model(input_tensor)[-1].sigmoid().to(torch.float32).cpu()
+    compiled_model = load_openvino_model()
+    input_tensor = transform_image(image).unsqueeze(0).numpy()
+    prediction = torch.from_numpy(compiled_model([input_tensor])[0]).sigmoid().to(torch.float32)
+    refine_foreground = load_refine_foreground()
+    refine_device = "cpu"
 
     mask = prediction[0].squeeze()
     mask_image = transforms.ToPILImage()(mask).resize(image.size)
 
-    refined_foreground = refine_foreground(image, mask_image, device=device.type)
+    refined_foreground = refine_foreground(image, mask_image, device=refine_device)
     refined_foreground = refined_foreground.convert("RGBA")
     refined_foreground.putalpha(mask_image)
 

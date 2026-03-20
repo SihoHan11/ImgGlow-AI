@@ -15,3 +15,4 @@ einops
 timm
 kornia
 huggingface-hub>0.25
+openvino

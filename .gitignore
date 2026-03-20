@@ -29,6 +29,11 @@ npm-debug.*
 yarn-debug.*
 yarn-error.*
 temp-export-*/
+kernel.errors.txt
+
+# python cache
+__pycache__/
+*.pyc
 
 # macOS
 .DS_Store
@@ -56,7 +61,27 @@ temp-*
 # model files
 server/models/deblur/*
 !server/models/deblur/entry.py
+!server/models/deblur/core/
+!server/models/deblur/core/restormer_arch.py
 server/models/upscale/*
 !server/models/upscale/entry.py
 server/models/remove_bg/*
 !server/models/remove_bg/entry.py
+!server/models/remove_bg/core/
+!server/models/remove_bg/core/config.py
+!server/models/remove_bg/core/utils.py
+!server/models/remove_bg/core/image_proc.py
+!server/models/remove_bg/core/models/
+!server/models/remove_bg/core/models/birefnet.py
+!server/models/remove_bg/core/models/backbones/
+!server/models/remove_bg/core/models/backbones/build_backbone.py
+!server/models/remove_bg/core/models/backbones/swin_v1.py
+!server/models/remove_bg/core/models/modules/
+!server/models/remove_bg/core/models/modules/aspp.py
+!server/models/remove_bg/core/models/modules/decoder_blocks.py
+!server/models/remove_bg/core/models/modules/deform_conv.py
+!server/models/remove_bg/core/models/modules/lateral_blocks.py
+!server/models/remove_bg/core/models/modules/utils.py
+
+
+.temp-testScript/
