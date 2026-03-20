@@ -1,5 +1,8 @@
 # Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
 
+# venv
+.venv/
+
 # dependencies
 node_modules/
 
@@ -25,6 +28,7 @@ expo-env.d.ts
 npm-debug.*
 yarn-debug.*
 yarn-error.*
+temp-export-*/
 
 # macOS
 .DS_Store
@@ -33,9 +37,23 @@ yarn-error.*
 # local env files
 .env*.local
 
+# server runtime files
+server/storage/originals/*
+!server/storage/originals/.gitkeep
+server/storage/results/*
+!server/storage/results/.gitkeep
+
 # typescript
 *.tsbuildinfo
 
 # generated native folders
 /ios
 /android
+
+# temp folders
+temp-*
+
+# model files
+server/models/deblur/*.pth
+server/models/upscale/*.pth
+server/models/remove_bg/*.pth

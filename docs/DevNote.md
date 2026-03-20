@@ -1,0 +1,92 @@
+# ImgGlow AI 개발 노트
+
+## 목표
+- 모바일 앱에서 이미지를 선택하고 서버로 전송해 실제 모델 파이프라인 결과를 받는 데모를 완성한다.
+- mock 응답은 사용하지 않고, 서버가 `server/models/` 하위 폴더의 실제 모델 엔트리 포인트를 실행하도록 구성한다.
+- 모델 파일과 가중치는 별도로 확보되어 있다고 가정하고, 이번 작업에서는 저장소에 수용 가능한 폴더 구조와 호출 지점을 만든다.
+
+## 구현 범위
+- Expo 기반 모바일 앱 3개 화면 구성
+- `Home`: 이미지 선택, 기능 선택, 처리 실행
+- `Result`: 원본/결과 확인, 저장
+- `History`: 작업 기록 조회, 재열람, 삭제
+- FastAPI 서버 추가
+- `POST /process`
+- `GET /history`
+- `GET /history/{id}`
+- `DELETE /history/{id}`
+
+## 서버 구조
+- `server/models/upscale/`
+- `server/models/deblur/`
+- `server/models/remove_bg/`
+- `server/storage/originals/`
+- `server/storage/results/`
+- `server/data/history.json`
+
+## 모델 연동 방식
+- mode별 모델 디렉터리를 고정 경로로 사용한다.
+- 서버는 각 모델 폴더 안에서 `entry.py`, `infer.py`, `run.py`, `main.py` 중 하나를 찾아 실행한다.
+- 실행 인자는 공통으로 `--input <원본경로> --output <결과경로>` 형태를 사용한다.
+- 모델 파일 자체는 이번 작업에서 생성하거나 수정하지 않는다.
+
+## 데이터 구조
+- `id`
+- `type`
+- `status`
+- `originalImagePath`
+- `resultImagePath`
+- `originalSize`
+- `resultSize`
+- `errorMessage`
+- `createdAt`
+
+## 상태값
+- `processing`
+- `completed`
+- `failed`
+
+## 모바일 메모
+- API 주소는 `src/constants/api.js`에서 관리한다.
+- 실기기 또는 Android 에뮬레이터에서는 서버 주소를 환경에 맞게 수정해야 한다.
+- 결과 저장은 Expo Media Library 권한을 사용한다.
+
+## 실행 메모
+- 서버 의존성 설치: `python -m pip install -r server/requirements.txt`
+- 서버 실행: `python -m uvicorn server.main:app --reload --host 0.0.0.0 --port 8000`
+- 앱 실행: `npm start`
+
+## 테스트 체크리스트
+- 이미지 선택 후 3개 mode 요청 가능 여부
+- mode별 모델 폴더가 올바르게 선택되는지
+- 결과 파일 생성 시 결과 화면에 정상 노출되는지
+- 모델 실행 실패 시 오류 메시지와 실패 기록이 남는지
+- 기록 조회 및 삭제가 정상 동작하는지
+
+## 프론트엔드 디자인 작업 메모
+- `plan.md`의 화면 정의를 기준으로 Home, Result, History의 정보 구조를 먼저 검토했다.
+- 기존 구조는 이미 3개 화면으로 분리되어 있어, 구조 변경 없이 스타일과 콘텐츠 위계만 보강하는 방향으로 결정했다.
+- Stitch MCP를 사용해 Home, Result, History용 모바일 UI 콘셉트를 생성했다.
+- 색상은 지정 팔레트 `#73020C`, `#BF0436`, `#D9A0AF`, `#D9CEC5` 중에서 `#BF0436`을 메인 포인트로 선택했다.
+- Stitch 결과를 바탕으로 다크 에디토리얼 스타일의 공통 디자인 방향을 정리했다.
+- 공통 테마 토큰은 `src/constants/theme.js`에 추가했다.
+- 적용 범위는 `App.js`, `src/components/ImageCard.js`, `src/components/ModeSelector.js`, `src/components/PrimaryButton.js`, `src/screens/HomeScreen.js`, `src/screens/ResultScreen.js`, `src/screens/HistoryScreen.js`로 제한했다.
+- Home 화면은 서비스 소개와 작업 흐름을 더 명확히 보이도록 보강했다.
+- Result 화면은 처리 상태 카드와 액션 우선순위가 드러나도록 정리했다.
+- History 화면은 상태 배지와 상단 설명 영역을 추가해 기록성 화면으로 보이도록 정리했다.
+- 디자인 컨셉 문서는 `Design.md`에 정리했다.
+- Stitch 기반 상세 기준은 `.stitch/DESIGN.md`에 유지했다.
+
+## 검증 메모
+- PowerShell 실행 정책으로 `npx.ps1` 직접 실행은 실패했다.
+- `cmd /c npx expo export --platform android --output-dir temp-export-check`로 우회해 번들 검증을 진행했다.
+- Expo Android export가 정상 완료되어 현재 JS 번들 기준으로 화면 연결과 구문 오류는 없는 상태다.
+
+## 남은 과정
+- 각 모델 폴더에 실제 실행 엔트리 파일을 배치한다.
+- 배치 위치는 `server/models/upscale/`, `server/models/deblur/`, `server/models/remove_bg/`이다.
+- 서버는 각 폴더에서 `entry.py`, `infer.py`, `run.py`, `main.py` 중 하나를 찾는다.
+- 엔트리 파일은 `--input <원본경로> --output <결과경로>` 인자를 받아 결과 이미지를 생성해야 한다.
+- 실기기 또는 Android 에뮬레이터에서는 `127.0.0.1` 대신 현재 개발 PC의 실제 IP를 `API_BASE_URL`에 넣어야 한다.
+- 앱 실행 후 이미지 선택, 3개 mode 요청, 결과 저장, 기록 조회/삭제까지 순서대로 확인한다.
+- 모델 실행 실패 시 서버 응답 메시지와 `server/data/history.json`의 `failed` 기록이 남는지 확인한다.

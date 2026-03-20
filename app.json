@@ -13,15 +13,28 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSPhotoLibraryUsageDescription": "ImgGlow AI가 보정할 이미지를 선택하기 위해 사진 접근 권한을 사용합니다.",
+        "NSPhotoLibraryAddUsageDescription": "ImgGlow AI가 보정 결과를 저장하기 위해 사진 접근 권한을 사용합니다."
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "permissions": [
+        "READ_MEDIA_IMAGES",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE"
+      ]
     },
+    "plugins": [
+      "expo-image-picker",
+      "expo-media-library"
+    ],
     "web": {
       "favicon": "./assets/favicon.png"
     }
