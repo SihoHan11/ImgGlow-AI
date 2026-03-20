@@ -54,6 +54,6 @@ server/storage/results/*
 temp-*
 
 # model files
-server/models/deblur/*.pth
-server/models/upscale/*.pth
-server/models/remove_bg/*.pth
+server/models/deblur/*
+server/models/upscale/*
+server/models/remove_bg/*
