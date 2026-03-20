@@ -58,6 +58,50 @@ ImgGlow-AI는 Expo 기반 React Native 앱과 FastAPI 서버를 결합해 모바
   - 엔트리: `server/models/remove_bg/entry.py`
   - 가중치: `server/models/remove_bg/BiRefNet-general-bb_swin_v1_tiny-epoch_232.pth`
 
+## 모델 다운로드
+
+이 저장소에는 모델 가중치 파일이 포함되어 있지 않습니다.
+아래 파일만 내려받아 지정한 위치에 그대로 넣으면 서버가 자동으로 사용합니다.
+
+### 1. 업스케일 모델
+
+- 파일명: `RealESRGAN_x4plus.pth`
+- 저장 위치: `server/models/upscale/RealESRGAN_x4plus.pth`
+- 공식 안내: [Real-ESRGAN README](https://github.com/xinntao/Real-ESRGAN)
+- 직접 다운로드:
+  - [RealESRGAN_x4plus.pth](https://github.com/xinntao/Real-ESRGAN/releases/download/v0.1.0/RealESRGAN_x4plus.pth)
+
+### 2. 디블러 모델
+
+- 권장 파일명: `motion_deblurring.pth`
+- 대체 가능 파일명: `single_image_defocus_deblurring.pth`
+- 저장 위치:
+  - `server/models/deblur/motion_deblurring.pth`
+  - 또는 `server/models/deblur/single_image_defocus_deblurring.pth`
+- 공식 안내:
+  - [Restormer 저장소](https://github.com/swz30/Restormer)
+  - [Restormer Pretrained Models 릴리스](https://github.com/swz30/Restormer/releases/tag/v1.0)
+
+### 3. 배경 제거 모델
+
+- 파일명: `BiRefNet-general-bb_swin_v1_tiny-epoch_232.pth`
+- 저장 위치: `server/models/remove_bg/BiRefNet-general-bb_swin_v1_tiny-epoch_232.pth`
+- 공식 안내:
+  - [BiRefNet 저장소](https://github.com/ZhengPeng7/BiRefNet)
+  - [BiRefNet Releases](https://github.com/ZhengPeng7/BiRefNet/releases)
+
+### 가장 간단한 설치 순서
+
+1. 위 링크에서 가중치 파일 3개를 다운로드합니다.
+2. 파일명을 바꾸지 말고 각 폴더에 그대로 복사합니다.
+3. `npm run server`로 서버를 실행합니다.
+4. 모델 파일이 올바른 위치에 있으면 요청 시 자동으로 로드됩니다.
+
+참고:
+- `deblur`는 `motion_deblurring.pth`가 있으면 그 파일을 우선 사용합니다.
+- `motion_deblurring.pth`가 없고 `single_image_defocus_deblurring.pth`만 있어도 동작합니다.
+- OpenVINO IR 파일이 없으면 첫 실행 시 `pth -> xml/bin` 변환이 1회 수행될 수 있습니다.
+
 ## 지원 API
 
 - `POST /process`
