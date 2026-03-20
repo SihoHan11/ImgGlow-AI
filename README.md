@@ -167,6 +167,9 @@ npm run web
 
 외부 모델 및 관련 라이선스 정보는 `LICENSE.md`에 정리합니다.
 
+## 밝혀진 문제
+- 디블러(Deblur)기능이 잘 작동하지 않습니다.
+
 ## 문서
 
 - `docs/plan.md`
