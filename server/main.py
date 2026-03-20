@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime, timezone
 from pathlib import Path
 from uuid import uuid4
@@ -23,6 +24,7 @@ from server.services.model_runner import delete_file_if_exists, run_model
 
 ensure_directories()
 
+logger = logging.getLogger(__name__)
 app = FastAPI(title="ImgGlow AI API")
 
 app.add_middleware(
@@ -70,6 +72,19 @@ def build_history_record(job_id: str, mode: str, original_image_path: Path, orig
         "errorMessage": None,
         "createdAt": datetime.now(timezone.utc).isoformat(),
     }
+
+
+def build_public_error_message(error: Exception) -> str:
+    if isinstance(error, FileNotFoundError):
+        return "필요한 모델 파일을 찾을 수 없습니다."
+
+    if isinstance(error, (ImportError, ModuleNotFoundError)):
+        return "필수 서버 의존성이 설치되지 않았습니다."
+
+    if isinstance(error, ValueError):
+        return str(error)
+
+    return "이미지 처리 중 서버 오류가 발생했습니다."
 
 
 @app.get("/history", response_model=HistoryListResponse)
@@ -131,13 +146,15 @@ async def process_image(
         history_record["resultImagePath"] = str(output_path)
         history_record["resultSize"] = output_path.stat().st_size
     except Exception as error:
+        logger.exception("이미지 처리 실패: mode=%s, job_id=%s", mode, history_record["id"])
+        public_error_message = build_public_error_message(error)
         history_record["status"] = "failed"
-        history_record["errorMessage"] = str(error)
+        history_record["errorMessage"] = public_error_message
         upsert_history_item(history_record)
         raise HTTPException(
             status_code=500,
             detail={
-                "message": str(error),
+                "message": public_error_message,
                 "id": history_record["id"],
                 "status": history_record["status"],
             },

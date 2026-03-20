@@ -40,9 +40,12 @@ __pycache__/
 *.pem
 
 # local env files
+.env
+.env.*
 .env*.local
 
 # server runtime files
+server/data/history.json
 server/storage/originals/*
 !server/storage/originals/.gitkeep
 server/storage/results/*
