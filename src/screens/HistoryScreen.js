@@ -45,6 +45,15 @@ export default function HistoryScreen({ navigation }) {
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(false);
 
+  function handleBack() {
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+      return;
+    }
+
+    navigation.navigate('Home');
+  }
+
   const loadHistory = useCallback(async () => {
     try {
       setLoading(true);
@@ -122,13 +131,24 @@ export default function HistoryScreen({ navigation }) {
         refreshing={loading}
         renderItem={renderItem}
         ListHeaderComponent={
-          <View style={styles.header}>
-            <Text style={styles.eyebrow}>HISTORY</Text>
-            <Text style={styles.headerTitle}>최근 AI 처리 기록</Text>
-            <Text style={styles.headerText}>
-              완료 여부와 결과 용량을 한 번에 확인하고, 필요한 작업을 다시 열어볼 수 있습니다.
-            </Text>
-          </View>
+          <>
+            <View style={styles.topBar}>
+              <Pressable onPress={handleBack} style={styles.topBarAction}>
+                <Text style={styles.topBarActionText}>{'<'} 뒤로</Text>
+              </Pressable>
+              <Text style={styles.topBarTitle}>작업 기록</Text>
+              <Pressable onPress={() => navigation.navigate('Home')} style={styles.topBarAction}>
+                <Text style={styles.topBarActionText}>홈</Text>
+              </Pressable>
+            </View>
+            <View style={styles.header}>
+              <Text style={styles.eyebrow}>HISTORY</Text>
+              <Text style={styles.headerTitle}>최근 기록</Text>
+              <Text style={styles.headerText}>
+                완료 여부와 결과 용량을 한 번에 확인하고, 필요한 작업을 다시 열어볼 수 있습니다.
+              </Text>
+            </View>
+          </>
         }
         ListEmptyComponent={
           <View style={styles.emptyBox}>
@@ -147,54 +167,86 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
   },
   container: {
-    padding: 20,
-    gap: 16,
+    padding: 14,
+    gap: 12,
     flexGrow: 1,
+    paddingBottom: 20,
+  },
+  topBar: {
+    minHeight: 28,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 2,
+  },
+  topBarTitle: {
+    color: COLORS.text,
+    fontSize: 16,
+    fontWeight: '800',
+  },
+  topBarAction: {
+    minWidth: 58,
+    minHeight: 30,
+    paddingHorizontal: 10,
+    borderRadius: 999,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(217, 160, 175, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(217, 160, 175, 0.18)',
+  },
+  topBarActionText: {
+    color: COLORS.neutral,
+    fontSize: 11,
+    fontWeight: '700',
   },
   header: {
-    gap: 8,
-    marginBottom: 4,
+    gap: 6,
+    marginBottom: 2,
   },
   eyebrow: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '700',
     letterSpacing: 1.2,
     color: COLORS.accent,
   },
   headerTitle: {
-    fontSize: 28,
+    fontSize: 22,
     fontWeight: '800',
     color: COLORS.text,
   },
   headerText: {
+    fontSize: 13,
     color: COLORS.textMuted,
-    lineHeight: 22,
+    lineHeight: 18,
   },
   card: {
-    borderRadius: 24,
+    borderRadius: 20,
     backgroundColor: COLORS.surface,
-    padding: 16,
-    gap: 6,
+    padding: 12,
+    gap: 5,
+    borderWidth: 1,
+    borderColor: 'rgba(236, 224, 215, 0.06)',
   },
   cardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 12,
-    marginBottom: 2,
+    marginBottom: 1,
   },
   title: {
-    fontSize: 17,
+    fontSize: 15,
     fontWeight: '700',
     color: COLORS.text,
   },
   meta: {
     color: COLORS.textMuted,
-    fontSize: 14,
+    fontSize: 12,
   },
   statusBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
     borderRadius: 999,
   },
   statusBadgeDone: {
@@ -204,7 +256,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(217, 160, 175, 0.12)',
   },
   statusText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '700',
   },
   statusTextDone: {
@@ -215,12 +267,12 @@ const styles = StyleSheet.create({
   },
   actions: {
     flexDirection: 'row',
-    gap: 10,
-    marginTop: 10,
+    gap: 8,
+    marginTop: 8,
   },
   actionButton: {
     flex: 1,
-    minHeight: 44,
+    minHeight: 38,
     borderRadius: 999,
     alignItems: 'center',
     justifyContent: 'center',
@@ -233,10 +285,12 @@ const styles = StyleSheet.create({
   },
   viewButtonText: {
     color: '#ffffff',
+    fontSize: 13,
     fontWeight: '700',
   },
   deleteButtonText: {
     color: COLORS.danger,
+    fontSize: 13,
     fontWeight: '700',
   },
   emptyBox: {

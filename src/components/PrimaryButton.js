@@ -1,18 +1,29 @@
 import { ActivityIndicator, Pressable, StyleSheet, Text } from 'react-native';
 import { COLORS, SHADOW } from '../constants/theme';
 
-export default function PrimaryButton({ label, onPress, disabled, loading, variant = 'primary' }) {
+export default function PrimaryButton({
+  label,
+  onPress,
+  disabled,
+  loading,
+  variant = 'primary',
+  compact = false,
+  style,
+  labelStyle,
+}) {
   return (
     <Pressable
       onPress={onPress}
       disabled={disabled || loading}
       style={({ pressed }) => [
         styles.button,
+        compact && styles.buttonCompact,
         variant === 'secondary' && styles.buttonSecondary,
         variant === 'ghost' && styles.buttonGhost,
         variant === 'danger' && styles.buttonDanger,
         (disabled || loading) && styles.buttonDisabled,
         pressed && !disabled && !loading && styles.buttonPressed,
+        style,
       ]}
     >
       {loading ? (
@@ -21,8 +32,10 @@ export default function PrimaryButton({ label, onPress, disabled, loading, varia
         <Text
           style={[
             styles.label,
+            compact && styles.labelCompact,
             (variant === 'secondary' || variant === 'ghost') && styles.labelSecondary,
             variant === 'danger' && styles.labelDanger,
+            labelStyle,
           ]}
         >
           {label}
@@ -40,6 +53,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: COLORS.primary,
     ...SHADOW,
+  },
+  buttonCompact: {
+    minHeight: 46,
+    paddingHorizontal: 18,
   },
   buttonSecondary: {
     backgroundColor: COLORS.surfaceStrong,
@@ -75,6 +92,9 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontSize: 16,
     fontWeight: '700',
+  },
+  labelCompact: {
+    fontSize: 15,
   },
   labelSecondary: {
     color: COLORS.text,

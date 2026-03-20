@@ -1,6 +1,6 @@
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import * as MediaLibrary from 'expo-media-library';
-import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import ImageCard from '../components/ImageCard';
 import PrimaryButton from '../components/PrimaryButton';
@@ -8,6 +8,15 @@ import { COLORS } from '../constants/theme';
 
 export default function ResultScreen({ navigation, route }) {
   const { job, selectedImageUri } = route.params ?? {};
+
+  function handleBack() {
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+      return;
+    }
+
+    navigation.navigate('Home');
+  }
 
   async function handleSave() {
     if (!job?.resultImageUrl) {
@@ -39,14 +48,39 @@ export default function ResultScreen({ navigation, route }) {
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.container}>
+        <View style={styles.topBar}>
+          <Pressable onPress={handleBack} style={styles.topBarAction}>
+            <Text style={styles.topBarActionText}>{'<'} 뒤로</Text>
+          </Pressable>
+          <Text style={styles.topBarTitle}>처리 결과</Text>
+          <Pressable onPress={() => navigation.navigate('History')} style={styles.topBarAction}>
+            <Text style={styles.topBarActionText}>기록</Text>
+          </Pressable>
+        </View>
+
         <View style={styles.summaryCard}>
-          <Text style={styles.eyebrow}>PROCESS REPORT</Text>
-          <Text style={styles.summaryTitle}>처리 상태</Text>
-          <Text style={[styles.summaryValue, statusTone]}>{statusLabel}</Text>
-          <Text style={styles.metaText}>기능: {job?.type || '-'}</Text>
-          <Text style={styles.metaText}>원본 크기: {job?.originalSize ?? '-'} bytes</Text>
-          <Text style={styles.metaText}>결과 크기: {job?.resultSize ?? '-'} bytes</Text>
-          {job?.errorMessage ? <Text style={styles.errorText}>{job.errorMessage}</Text> : null}
+          <View style={styles.summaryInset}>
+            <View style={styles.summaryTopRow}>
+              <Text style={styles.eyebrow}>RESULT</Text>
+              <Text style={[styles.statusPill, statusTone]}>{statusLabel}</Text>
+            </View>
+            <Text style={styles.summaryTitle}>처리 결과</Text>
+            <View style={styles.metaGrid}>
+              <View style={styles.metaItem}>
+                <Text style={styles.metaLabel}>기능</Text>
+                <Text style={styles.metaValue}>{job?.type || '-'}</Text>
+              </View>
+              <View style={styles.metaItem}>
+                <Text style={styles.metaLabel}>원본</Text>
+                <Text style={styles.metaValue}>{job?.originalSize ?? '-'} bytes</Text>
+              </View>
+              <View style={styles.metaItem}>
+                <Text style={styles.metaLabel}>결과</Text>
+                <Text style={styles.metaValue}>{job?.resultSize ?? '-'} bytes</Text>
+              </View>
+            </View>
+            {job?.errorMessage ? <Text style={styles.errorText}>{job.errorMessage}</Text> : null}
+          </View>
         </View>
 
         <ImageCard
@@ -61,9 +95,29 @@ export default function ResultScreen({ navigation, route }) {
           emptyMessage="아직 결과 이미지가 없습니다."
         />
 
-        <PrimaryButton label="결과 이미지 저장" onPress={handleSave} disabled={!job?.resultImageUrl} />
-        <PrimaryButton label="작업 기록 보기" onPress={() => navigation.navigate('History')} variant="secondary" />
-        <PrimaryButton label="홈으로 돌아가기" onPress={() => navigation.navigate('Home')} variant="ghost" />
+        <View style={styles.actionRow}>
+          <PrimaryButton
+            label="저장"
+            onPress={handleSave}
+            disabled={!job?.resultImageUrl}
+            compact
+            style={styles.actionButton}
+          />
+          <PrimaryButton
+            label="기록"
+            onPress={() => navigation.navigate('History')}
+            variant="secondary"
+            compact
+            style={styles.actionButton}
+          />
+          <PrimaryButton
+            label="홈"
+            onPress={() => navigation.navigate('Home')}
+            variant="ghost"
+            compact
+            style={styles.homeButton}
+          />
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -75,30 +129,98 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
   },
   container: {
-    padding: 20,
-    gap: 18,
-    paddingBottom: 32,
+    padding: 14,
+    gap: 14,
+    paddingBottom: 20,
+  },
+  topBar: {
+    minHeight: 28,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  topBarTitle: {
+    color: COLORS.text,
+    fontSize: 16,
+    fontWeight: '800',
+  },
+  topBarAction: {
+    minWidth: 58,
+    minHeight: 30,
+    paddingHorizontal: 10,
+    borderRadius: 999,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(217, 160, 175, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(217, 160, 175, 0.18)',
+  },
+  topBarActionText: {
+    color: COLORS.neutral,
+    fontSize: 11,
+    fontWeight: '700',
   },
   summaryCard: {
-    borderRadius: 28,
+    borderRadius: 24,
     backgroundColor: COLORS.surfaceRaised,
-    padding: 18,
-    gap: 6,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(236, 224, 215, 0.06)',
+  },
+  summaryInset: {
+    borderRadius: 18,
+    backgroundColor: COLORS.surfaceMuted,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.22)',
+  },
+  summaryTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
   },
   eyebrow: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '700',
     letterSpacing: 1.2,
     color: COLORS.accent,
   },
+  statusPill: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 999,
+    backgroundColor: 'rgba(217, 160, 175, 0.08)',
+    overflow: 'hidden',
+    fontSize: 12,
+    fontWeight: '700',
+  },
   summaryTitle: {
-    fontSize: 15,
+    fontSize: 20,
+    marginBottom: 12,
     fontWeight: '700',
     color: COLORS.neutral,
   },
-  summaryValue: {
-    fontSize: 24,
-    fontWeight: '800',
+  metaGrid: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  metaItem: {
+    flex: 1,
+    padding: 10,
+    borderRadius: 14,
+    backgroundColor: 'rgba(236, 224, 215, 0.03)',
+  },
+  metaLabel: {
+    fontSize: 11,
+    marginBottom: 4,
+    color: COLORS.textSoft,
+    fontWeight: '700',
+  },
+  metaValue: {
+    fontSize: 12,
+    color: COLORS.text,
+    fontWeight: '600',
   },
   statusComplete: {
     color: COLORS.success,
@@ -109,13 +231,19 @@ const styles = StyleSheet.create({
   statusProcessing: {
     color: COLORS.neutral,
   },
-  metaText: {
-    fontSize: 14,
-    color: COLORS.textMuted,
-  },
   errorText: {
     marginTop: 8,
     color: COLORS.danger,
-    fontSize: 14,
+    fontSize: 13,
+  },
+  actionRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  actionButton: {
+    flex: 1,
+  },
+  homeButton: {
+    minWidth: 76,
   },
 });

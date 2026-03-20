@@ -31,17 +31,17 @@ export default function App() {
         <Stack.Screen
           name="Home"
           component={HomeScreen}
-          options={{ title: 'ImgGlow AI' }}
+          options={{ title: 'ImgGlow AI', headerShown: false }}
         />
         <Stack.Screen
           name="Result"
           component={ResultScreen}
-          options={{ title: '처리 결과' }}
+          options={{ title: '처리 결과', headerShown: false }}
         />
         <Stack.Screen
           name="History"
           component={HistoryScreen}
-          options={{ title: '작업 기록' }}
+          options={{ title: '작업 기록', headerShown: false }}
         />
       </Stack.Navigator>
     </NavigationContainer>

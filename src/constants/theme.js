@@ -20,9 +20,9 @@ export const SHADOW = {
   shadowColor: COLORS.overlay,
   shadowOffset: {
     width: 0,
-    height: 18,
+    height: 10,
   },
-  shadowOpacity: 0.28,
-  shadowRadius: 28,
-  elevation: 8,
+  shadowOpacity: 0.42,
+  shadowRadius: 18,
+  elevation: 6,
 };
