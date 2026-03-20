@@ -1,3 +1,17 @@
 fastapi==0.115.12
 uvicorn[standard]==0.34.0
 python-multipart==0.0.20
+torch
+torchvision
+opencv-python
+numpy<2
+Pillow
+scikit-image
+basicsr==1.4.2
+realesrgan==0.3.0
+natsort
+yacs
+einops
+timm
+kornia
+huggingface-hub>0.25

@@ -1,1 +1,24 @@
-[]
+[
+  {
+    "id": "ff2fa37f-e7ca-46d0-9382-deaf861bbdb7",
+    "type": "deblur",
+    "status": "completed",
+    "originalImagePath": "C:\\workspace\\intelApp\\ReactNative\\ImgGlow-AI\\server\\storage\\originals\\ff2fa37f-e7ca-46d0-9382-deaf861bbdb7.jpeg",
+    "resultImagePath": "C:\\workspace\\intelApp\\ReactNative\\ImgGlow-AI\\server\\storage\\results\\ff2fa37f-e7ca-46d0-9382-deaf861bbdb7.jpeg",
+    "originalSize": 59758,
+    "resultSize": 87529,
+    "errorMessage": null,
+    "createdAt": "2026-03-20T04:45:41.898441+00:00"
+  },
+  {
+    "id": "d1a397e1-7448-4639-8ed1-41a6d8a7e306",
+    "type": "upscale",
+    "status": "completed",
+    "originalImagePath": "C:\\workspace\\intelApp\\ReactNative\\ImgGlow-AI\\server\\storage\\originals\\d1a397e1-7448-4639-8ed1-41a6d8a7e306.jpeg",
+    "resultImagePath": "C:\\workspace\\intelApp\\ReactNative\\ImgGlow-AI\\server\\storage\\results\\d1a397e1-7448-4639-8ed1-41a6d8a7e306.jpeg",
+    "originalSize": 59758,
+    "resultSize": 228513,
+    "errorMessage": null,
+    "createdAt": "2026-03-20T04:44:48.261247+00:00"
+  }
+]

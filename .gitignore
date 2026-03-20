@@ -55,5 +55,8 @@ temp-*
 
 # model files
 server/models/deblur/*
+!server/models/deblur/entry.py
 server/models/upscale/*
+!server/models/upscale/entry.py
 server/models/remove_bg/*
+!server/models/remove_bg/entry.py
